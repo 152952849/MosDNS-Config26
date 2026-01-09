@@ -1,5 +1,5 @@
 log:
-  level: debug
+  level: warn
   file: "/var/log/mosdns.log"
 
 api:
@@ -32,9 +32,9 @@ plugins:
   - tag: dns_nocn
     type: "fallback"
     args:
-      primary: quad9 # 主dns
-      secondary: nextdns # 备用dns
-      threshold: 700 # 无响应切换 毫秒
+      primary: nova01 # 主dns
+      secondary: nova02 # 备用dns
+      threshold: 600 # 无响应切换 毫秒
       always_standby: true # 副可执行插件始终待命
   
   # dns-cn 序列
@@ -43,7 +43,7 @@ plugins:
     args:
       primary: ali # 主dns
       secondary: dnspod # 备用dns
-      threshold: 500
+      threshold: 600
       always_standby: true # 副可执行插件始终待命
 
   - tag: dns_nocn_seq
@@ -64,11 +64,11 @@ plugins:
       - exec: query_summary local
       - exec: $local
 
-  - tag: fallback_seq # 其他特殊情况统一使用 dns_cn 处理
+  - tag: fallback_seq # 其他特殊情况统一使用 dns_nocn 处理
     type: sequence
     args:
       - exec: query_summary fallback
-      - exec: $dns_cn
+      - exec: $dns_nocn
 
   - tag: other_seq # 其他特殊情况统一使用 dns_cn 处理
     type: sequence
@@ -82,31 +82,31 @@ plugins:
     args:
       - exec: $ecs_cn
       - exec: $dns_cn_seq
-      - matches: "!resp_ip $geoip_cn" # 响应非 cn ip
-        exec: drop_resp # 丢弃
+      # - matches: "!resp_ip $geoip_cn" # 响应非 cn ip
+      #   exec: drop_resp # 丢弃
+      # 丢弃已知污染 IP 响应
+      - matches: "resp_ip 61.160.148.90/24 221.228.32.13/24 114.237.67.59/24 117.69.71.58/24 180.109.0.0/16 4.36.66.178 8.7.198.45 37.61.54.158 46.82.174.68 59.24.3.173 64.33.88.161 78.16.49.15 93.46.8.89 159.106.121.75 202.106.1.2 202.181.7.85 203.161.230.171 209.145.54.50 211.94.66.147 216.234.179.13 243.185.187.39"
+        exec: drop_resp
 
   # query nocn 域名
   - tag: query_nocn
     type: sequence
     args:
       - exec: $no_ecs
-      - exec: prefer_ipv4
       - exec: $dns_nocn_seq
-      - matches: "resp_ip $geoip_cn" # 响应为 cn ip
-        exec: drop_resp # 丢弃
+      # 丢弃 CN IP 及已知污染 IP 响应
+      - matches: "resp_ip $geoip_cn 61.160.148.90/24 221.228.32.13/24 114.237.67.59/24 117.69.71.58/24 180.109.0.0/16 4.36.66.178 8.7.198.45 37.61.54.158 46.82.174.68 59.24.3.173 64.33.88.161 78.16.49.15 93.46.8.89 159.106.121.75 202.106.1.2 202.181.7.85 203.161.230.171 209.145.54.50 211.94.66.147 216.234.179.13 243.185.187.39"
+        exec: drop_resp
 
-  - tag: query_gfw
-    type: sequence
-    args:
-      - exec: $forward_remote
-
-  # query fallback
+    # query fallback
   - tag: query_fallback
     type: sequence
     args:
-      # - exec: $ecs-cn
-      - exec: prefer_ipv4
+      - exec: $no_ecs
       - exec: $fallback_seq
+      # 丢弃 CN IP 及已知污染 IP 响应
+      - matches: "resp_ip $geoip_cn 61.160.148.90/24 221.228.32.13/24 114.237.67.59/24 117.69.71.58/24 180.109.0.0/16 4.36.66.178 8.7.198.45 37.61.54.158 46.82.174.68 59.24.3.173 64.33.88.161 78.16.49.15 93.46.8.89 159.106.121.75 202.106.1.2 202.181.7.85 203.161.230.171 209.145.54.50 211.94.66.147 216.234.179.13 243.185.187.39"
+        exec: drop_resp
 
   # query lan
   - tag: query_lan
@@ -122,7 +122,7 @@ plugins:
   - tag: query_other 
     type: sequence
     args:
-      # - exec: $no_ecs 
+      - exec: $no_ecs 
       - exec: $other_seq
 
   - tag: pre_handle
@@ -167,25 +167,29 @@ plugins:
         exec: $query_lan
       - exec: jump has_resp_pre
 
-  # main_sequence
+  # main_sequence (优化顺序: GFW优先 → 白名单 → 非CN → CN → Fallback)
   - tag: main_sequence
     type: sequence
     args:
-      - matches: qname $geosite_ads-all # ad 域名
-        exec: $reject_ad
       - exec: $cache_wan # cache wan
       - exec: jump has_resp_main
-      - matches: qname $geosite_cn # cn 域名
-        exec: $query_cn
-      - exec: jump has_resp_main
-      # 检查是否符合GFW域名规则
+      # 1. GFW 域名优先 → 国外 (最确定需要代理)
       - matches: qname $geosite_gfw
-        exec: $query_gfw
-      - exec: jump has_resp_main
-      - matches: qname $geosite_location-!cn # 非 cn 域名
         exec: $query_nocn
       - exec: jump has_resp_main
-      # 其他
+      # 2. 白名单 (强制 CN)
+      - matches: qname $whitelist
+        exec: $query_cn
+      - exec: jump has_resp_main
+      # 3. 非 CN 域名 → 国外 (范围更广，优先匹配)
+      - matches: qname $geosite_location-!cn
+        exec: $query_nocn
+      - exec: jump has_resp_main
+      # 4. CN 域名 → CN
+      - matches: qname $geosite_cn
+        exec: $query_cn
+      - exec: jump has_resp_main
+      # 5. Fallback (未知域名，严格走国外)
       - exec: $no_ecs
       - exec: $query_fallback
       - exec: jump has_resp_main
