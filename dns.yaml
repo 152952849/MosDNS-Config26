@@ -63,16 +63,16 @@ plugins:
     args:
       concurrent: 2
       upstreams:
-        - addr: "https://dns.nextdns.io/af569d"
-          dial_addr: "45.90.28.193"
+        - addr: "https://dns.nextdns.io/##"   ##改为自己申请的Id
+          dial_addr: "##"
           enable_http3: true
-        - addr: "https://dns.nextdns.io/af569d"
-          dial_addr: "2a07:a8c0::af:569d"
+        - addr: "https://dns.nextdns.io/##"
+          dial_addr: "##"
           enable_http3: true
 
-        - addr: "tls://af569d.dns.nextdns.io"
+        - addr: "tls://##.dns.nextdns.io"
           enable_pipeline: true
-          dial_addr: "45.90.28.193"
+          dial_addr: "##"
 
   - tag: quad9
     type: forward
@@ -96,8 +96,8 @@ plugins:
     args:
       concurrent: 1
       upstreams:
-        - addr: "https://dns.nextdns.io/af569d"
-          dial_addr: "45.90.28.193"
+        - addr: "https://dns.nextdns.io/##" ##改为自己申请的Id
+          dial_addr: "##"
           enable_http3: true
 
   # ali doh dot h3
