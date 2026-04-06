@@ -32,8 +32,8 @@ plugins:
   - tag: dns_nocn
     type: "fallback"
     args:
-      primary: nova01 # 主dns
-      secondary: nova02 # 备用dns
+      primary: nextdns # 主dns
+      secondary: cloudflare # 备用dns
       threshold: 600 # 无响应切换 毫秒
       always_standby: true # 副可执行插件始终待命
   

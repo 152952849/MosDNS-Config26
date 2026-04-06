@@ -51,7 +51,6 @@ plugins:
         - addr: "https://1.1.1.1/dns-query"
           dial_addr: "1.1.1.1"
 
-
         - addr: "tls://1.1.1.1"
           dial_addr: "1.1.1.1"
           enable_pipeline: true # TCP/DoT 启用 RFC 7766 新的 query pipelining 连接复用模式
@@ -64,16 +63,16 @@ plugins:
     args:
       concurrent: 2
       upstreams:
-        - addr: "https://dns.nextdns.io"
-          dial_addr: "45.90.28.186"
+        - addr: "https://dns.nextdns.io/af569d"
+          dial_addr: "45.90.28.193"
           enable_http3: true
-        - addr: "https://dns.nextdns.io"
-          dial_addr: "2a07:a8c0::ae:d5cb"
+        - addr: "https://dns.nextdns.io/af569d"
+          dial_addr: "2a07:a8c0::af:569d"
           enable_http3: true
 
-        - addr: "tls://dns.nextdns.io"
+        - addr: "tls://af569d.dns.nextdns.io"
           enable_pipeline: true
-          dial_addr: "45.90.28.186"
+          dial_addr: "45.90.28.193"
 
   - tag: quad9
     type: forward
@@ -97,7 +96,10 @@ plugins:
     args:
       concurrent: 1
       upstreams:
-        - addr: 127.0.0.1:7874 
+        - addr: "https://dns.nextdns.io/af569d"
+          dial_addr: "45.90.28.193"
+          enable_http3: true
+
   # ali doh dot h3
   - tag: ali
     type: forward
@@ -145,7 +147,7 @@ plugins:
     args:
       concurrent: 1
       upstreams:
-        - addr: "udp://127.0.0.1:53"
+        - addr: "udp://192.168.2.1:53"
 
   # server 失败
   - tag: reject_2
