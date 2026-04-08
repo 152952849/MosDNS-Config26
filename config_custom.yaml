@@ -167,29 +167,30 @@ plugins:
         exec: $query_lan
       - exec: jump has_resp_pre
 
-  # main_sequence (优化顺序: GFW优先 → 白名单 → 非CN → CN → Fallback)
+  # main_sequence (优化顺序: 白名单 → 缓存→ GFW优先 → 非CN → CN → Fallback)
   - tag: main_sequence
     type: sequence
     args:
-      - exec: $cache_wan # cache wan
-      - exec: jump has_resp_main
-      # 1. GFW 域名优先 → 国外 (最确定需要代理)
-      - matches: qname $geosite_gfw
-        exec: $query_nocn
-      - exec: jump has_resp_main
-      # 2. 白名单 (强制 CN)
+      # 1. 白名单 (强制 CN)
       - matches: qname $whitelist
         exec: $query_cn
       - exec: jump has_resp_main
-      # 3. 非 CN 域名 → 国外 (范围更广，优先匹配)
+      # 2. 缓存
+      - exec: $cache_wan # cache wan
+      - exec: jump has_resp_main
+      # 3. GFW 域名优先 → 国外 (最确定需要代理)
+      - matches: qname $geosite_gfw
+        exec: $query_nocn
+      - exec: jump has_resp_main
+      # 4. 非 CN 域名 → 国外 (范围更广，优先匹配)
       - matches: qname $geosite_location-!cn
         exec: $query_nocn
       - exec: jump has_resp_main
-      # 4. CN 域名 → CN
+      # 5. CN 域名 → CN
       - matches: qname $geosite_cn
         exec: $query_cn
       - exec: jump has_resp_main
-      # 5. Fallback (未知域名，严格走国外)
+      # 6. Fallback (未知域名，严格走国外)
       - exec: $no_ecs
       - exec: $query_fallback
       - exec: jump has_resp_main
