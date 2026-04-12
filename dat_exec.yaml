@@ -32,11 +32,6 @@ plugins:
     args:
       files:
         - "/var/mosdns/geosite_geolocation-!cn.txt"
-  - tag: geosite_ads-all # 广告域名
-    type: domain_set
-    args:
-      files:
-        - "/var/mosdns/geosite_category-ads-all.txt"
 
   ################# 可执行插件 ################
 
