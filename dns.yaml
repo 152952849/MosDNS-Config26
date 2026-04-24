@@ -96,9 +96,8 @@ plugins:
     args:
       concurrent: 1
       upstreams:
-        - addr: "https://dns.nextdns.io/##" ##改为自己申请的Id
-          dial_addr: "##"
-          enable_http3: true
+        - addr: "https://1.1.1.1/dns-query"
+          dial_addr: "1.1.1.1"
 
   # ali doh dot h3
   - tag: ali
