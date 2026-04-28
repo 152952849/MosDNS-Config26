@@ -32,6 +32,11 @@ plugins:
     args:
       files:
         - "/var/mosdns/geosite_geolocation-!cn.txt"
+  - tag: cloudflare_ip # cloudflare IP
+    type: ip_set
+    args:
+      files:
+        - "/etc/mosdns/rule/cloudflare-cidr.txt" # https://raw.githubusercontent.com/XIU2/CloudflareSpeedTest/master/ip.txt
 
   ################# 可执行插件 ################
 
