@@ -75,14 +75,14 @@ plugins:
     args:
       - exec: query_summary other
       - exec: $dns_cn
-### cloudflare优选
-  - tag: blackhole_cloudflare # blackhole_cloudflare
-    type: sequence
-    args:
-      - exec: query_summary blackhole_cloudflare
-      - exec: black_hole 162.159.38.46 162.159.45.226 # best_cloudflare_ipv4
-      - exec: ttl 3600-0
-      - exec: accept
+
+# - tag: blackhole_cloudflare # blackhole_cloudflare
+#    type: sequence
+#    args:
+#      - exec: query_summary blackhole_cloudflare
+#      - exec: black_hole 172.64.52.63 162.159.38.206 # best_cloudflare_ipv4
+#      - exec: ttl 3600-0
+#      - exec: accept
 
   # query cn 域名
   - tag: query_cn
@@ -143,8 +143,8 @@ plugins:
     type: sequence
     args:
       - exec: $ttl_5m # ttl 5min
-      - matches: "resp_ip $cloudflare_ip" # cloudflare优选
-        exec: $blackhole_cloudflare
+ #     - matches: "resp_ip $cloudflare_ip" #cloudflare优选
+ #       exec: $blackhole_cloudflare
       - exec: accept # 接受响应,终止流程
 
   # pre_sequence 结果处理 
